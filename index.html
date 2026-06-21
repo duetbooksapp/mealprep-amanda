@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuetMealPrep — Amanda</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#1a1d24; --card2:#222631; --line:#2c313c;
+    --text:#e8eaed; --muted:#9aa0ab; --accent:#ffb703; --accent2:#2ec4b6;
+    --green:#3ddc84; --red:#ff6b6b; --walmart:#0071dc;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header{padding:20px 18px 14px;background:linear-gradient(135deg,#1a1d24,#11141a);border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:20px;letter-spacing:.3px}
+  .sub{color:var(--muted);font-size:13px;margin-top:3px}
+  nav{display:flex;gap:6px;padding:10px 12px;background:var(--card);position:sticky;top:0;z-index:5;border-bottom:1px solid var(--line);overflow-x:auto}
+  nav button{flex:0 0 auto;background:transparent;border:1px solid transparent;color:var(--muted);padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  nav button.active{background:var(--card2);color:var(--text);border-color:var(--line)}
+  main{max-width:760px;margin:0 auto;padding:16px 14px 60px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .tab{display:none}.tab.active{display:block}
+  h2{font-size:16px;margin:0 0 4px}
+  h3{font-size:14px;color:var(--accent);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.6px}
+  .macros{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .macro{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;text-align:center;flex:1;min-width:70px}
+  .macro b{display:block;font-size:18px}.macro span{font-size:11px;color:var(--muted)}
+  .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:4px 11px;font-size:12px;color:var(--muted);margin-right:6px}
+  ol,ul{padding-left:20px;margin:8px 0}li{margin:5px 0}
+  /* shopping rows */
+  .shead{display:flex;align-items:center;gap:8px;padding:0 0 6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line)}
+  .shead .h-have{width:26px;text-align:center}.shead .h-item{flex:1}.shead .h-qty{width:62px;text-align:center}.shead .h-price{width:74px;text-align:center}.shead .h-tot{width:58px;text-align:right}.shead .h-wm{width:74px}
+  .srow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .srow:last-child{border-bottom:none}
+  .srow.owned{opacity:.45}
+  .srow.owned .name b{text-decoration:line-through}
+  .srow .have{width:26px;display:flex;justify-content:center}
+  .srow .have input{width:20px;height:20px;accent-color:var(--green);cursor:pointer}
+  .srow .name{flex:1;min-width:0}
+  .srow .name b{display:block;font-size:14px}.srow .name small{color:var(--muted);font-size:11px}
+  .srow .qtywrap{width:62px;display:flex;align-items:center;gap:3px}
+  .srow .qtywrap input{width:38px;text-align:center}
+  .srow .qtywrap .u{font-size:10px;color:var(--muted)}
+  .srow .pricewrap{width:74px;display:flex;align-items:center;gap:2px}
+  .srow .pricewrap input{width:54px;text-align:right}
+  .srow .linetot{width:58px;text-align:right;font-weight:700;font-size:14px}
+  input[type=number],input[type=text],input[type=date]{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 6px;font-size:14px;width:100%}
+  /* verify panel */
+  .vbar{height:8px;background:var(--card2);border-radius:6px;overflow:hidden;margin:10px 0}
+  .vbar > div{height:100%;background:var(--green);width:0;transition:width .2s}
+  .vrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .vrow:last-child{border-bottom:none}
+  .vrow input{width:20px;height:20px;accent-color:var(--accent2);cursor:pointer;flex:0 0 auto}
+  .vrow.checked span{text-decoration:line-through;color:var(--muted)}
+  .vrow .vq{margin-left:auto;color:var(--muted);font-size:12px}
+  .wm{background:var(--walmart);color:#fff;border:none;border-radius:8px;padding:8px 8px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap;width:74px;text-align:center;display:inline-block}
+  .btn{background:var(--accent);color:#1a1300;border:none;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:14px}
+  .btn.ghost{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+  .btn.green{background:var(--green);color:#04210f}
+  .totbar{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:2px solid var(--line);font-size:16px}
+  .totbar b{font-size:22px;color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label.fld{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  .stat{background:linear-gradient(135deg,var(--card2),#1c2029);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .stat b{display:block;font-size:24px;color:var(--green)}.stat span{font-size:12px;color:var(--muted)}
+  .reclist .rec{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--card2)}
+  .reclist .rec:hover{border-color:var(--accent)}
+  .reclist .rec small{color:var(--muted);display:block}
+  .checkflow li{margin:10px 0;list-style:none}
+  .checkflow input{margin-right:8px;width:18px;height:18px;accent-color:var(--green)}
+  .day{font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.5px}
+  .logrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .muted{color:var(--muted)}
+  .note{font-size:12px;color:var(--muted);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px}
+  .linkbtn{background:none;border:none;color:var(--accent2);font-size:12px;cursor:pointer;padding:0;text-decoration:underline}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍲 DuetMealPrep</h1>
+  <div class="sub">Weekly meal prep for Steve &amp; Max — pick · order · prep · track</div>
+</header>
+
+<nav>
+  <button class="active" data-tab="week">This Week</button>
+  <button data-tab="shop">Shopping List</button>
+  <button data-tab="log">Cost &amp; Time</button>
+  <button data-tab="lib">Recipes</button>
+</nav>
+
+<main>
+  <!-- THIS WEEK -->
+  <section class="tab active" id="week">
+    <div class="card">
+      <div class="day">Week of <span id="weekDate"></span></div>
+      <h2 id="recName">—</h2>
+      <div id="recMacros" class="macros"></div>
+      <div>
+        <span class="pill" id="recServings"></span>
+        <span class="pill" id="recPrep"></span>
+        <span class="pill" id="recCook"></span>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" id="rotateBtn">↻ Pick a different recipe</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Your weekend flow</h3>
+      <ul class="checkflow" id="flow">
+        <li><span class="day">Sat night</span><br><label><input type="checkbox" data-k="f1">Open Shopping List, tap each Walmart link, add to cart</label></li>
+        <li><label><input type="checkbox" data-k="f2">Schedule Sunday morning pickup at your Walmart</label></li>
+        <li><span class="day">Sun AM</span><br><label><input type="checkbox" data-k="f3">Pick up groceries</label></li>
+        <li><label><input type="checkbox" data-k="f4">Start slow cooker (beef + seasoning + broth)</label></li>
+        <li><span class="day">Sun PM</span><br><label><input type="checkbox" data-k="f5">Blend queso, cook pasta, fold together</label></li>
+        <li><label><input type="checkbox" data-k="f6">Portion into containers — log cost &amp; time</label></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Instructions</h3>
+      <ol id="recSteps"></ol>
+    </div>
+  </section>
+
+  <!-- SHOPPING -->
+  <section class="tab" id="shop">
+    <div class="card">
+      <h2>Walmart shopping list</h2>
+      <div class="muted" style="font-size:13px">Set the <b>Qty</b> you'll buy and the <b>price each</b> — the line total and grand total update automatically. Tap the blue button to find the item on Walmart.</div>
+      <div class="shead" style="margin-top:12px">
+        <span class="h-have">Have</span><span class="h-item">Item</span><span class="h-qty">Qty</span><span class="h-price">$ each</span><span class="h-tot">Total</span><span class="h-wm"></span>
+      </div>
+      <div id="shopList"></div>
+      <div class="totbar"><span>Grand total <span class="muted" style="font-size:13px">· <span id="cps"></span>/serving</span></span><b id="shopTotal">$0</b></div>
+      <div class="muted" id="orderSummary" style="font-size:13px;margin-top:6px"></div>
+      <div style="margin-top:10px"><button class="linkbtn" id="resetPrices">↺ Reset this recipe (qty, prices, checks)</button></div>
+      <div class="note">Check <b>Have</b> for anything already in your pantry — it drops off the total so you only order what's missing.</div>
+    </div>
+
+    <div class="card">
+      <h2>🛒 Verify your cart</h2>
+      <div class="muted" style="font-size:13px">After you add items on Walmart, make sure nothing got missed. Two ways:</div>
+      <div class="note" style="margin-top:10px"><b>Fastest:</b> snap a screenshot of your Walmart cart and send it to Claude in the chat — it'll compare against this list and tell you exactly what's missing or extra.</div>
+      <h3>Or tick them off here</h3>
+      <div class="vbar"><div id="vfill"></div></div>
+      <div class="muted" id="vsummary" style="font-size:13px;margin-bottom:8px"></div>
+      <div id="verifyList"></div>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section class="tab" id="log">
+    <div class="card">
+      <h2>Log this week</h2>
+      <div class="grid2">
+        <div><label class="fld">Date prepped</label><input type="date" id="logDate"></div>
+        <div><label class="fld">Servings made</label><input type="number" id="logServ" value="10"></div>
+        <div><label class="fld">Actual cost paid ($)</label><input type="number" id="logCost" step="0.01" placeholder="auto from list"></div>
+        <div><label class="fld">Active prep time (min)</label><input type="number" id="logTime" value="40"></div>
+      </div>
+      <h3>Assumptions (edit once)</h3>
+      <div class="grid2">
+        <div><label class="fld">Eating out costs ($/meal)</label><input type="number" id="aEat" value="13"></div>
+        <div><label class="fld">Cooking each meal alone (min)</label><input type="number" id="aCook" value="25"></div>
+      </div>
+      <button class="btn green" id="saveLog" style="margin-top:14px;width:100%">Save this week</button>
+    </div>
+
+    <div class="card">
+      <h2>Season totals</h2>
+      <div class="grid2" style="gap:10px">
+        <div class="stat"><b id="tWeeks">0</b><span>weeks prepped</span></div>
+        <div class="stat"><b id="tMeals">0</b><span>meals made</span></div>
+        <div class="stat"><b id="tSaved">$0</b><span>saved vs eating out</span></div>
+        <div class="stat"><b id="tTime">0h</b><span>time saved</span></div>
+      </div>
+      <div style="margin-top:8px" class="muted" id="tPerServ"></div>
+    </div>
+
+    <div class="card">
+      <h2>History</h2>
+      <div id="history"><div class="muted">No weeks logged yet.</div></div>
+    </div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section class="tab" id="lib">
+    <div class="card">
+      <h2>Recipe library</h2>
+      <div class="muted" style="font-size:13px">From your Set It Shred &amp; Tasty Shreds books. Tap one to make it this week's pick.</div>
+      <div class="reclist" id="recLib" style="margin-top:10px"></div>
+      <div class="note">Recipes with full ingredients/steps build a complete shopping list. Title-only picks (★) still track cost &amp; time — open the PDF for steps.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------- RECIPE DATA (extracted from your PDFs) ----------
+   Each ingredient: name, need (recipe amount), qty (default # to buy),
+   unit (what one unit is), price (default $ per unit), q (Walmart search) */
+const RECIPES = [
+ {id:'queso-taco-mac', name:'Queso Taco Mac N Cheese', source:'Set It Shred Vol 1, p.18',
+  cal:579,p:65,c:45,f:16, servings:10, prep:'20–30 min', cook:'6–7 hr',
+  ingredients:[
+    {name:'96/4 lean ground beef', need:'4 lb', qty:4, unit:'lb', price:6.25, q:'ground beef 96/4 lean'},
+    {name:'Barilla Protein+ Cellentani pasta', need:'18 oz', qty:2, unit:'box', price:2.50, q:'Barilla Protein Plus pasta'},
+    {name:'Fat-free cottage cheese', need:'900 g', qty:1, unit:'32oz tub', price:4, q:'fat free cottage cheese'},
+    {name:'⅓-less-fat cream cheese', need:'150 g', qty:1, unit:'8oz block', price:3, q:'1/3 less fat cream cheese'},
+    {name:"Rico's Premium Cheddar Cheese Sauce", need:'120 g', qty:1, unit:'jar', price:4, q:"Rico's cheddar cheese sauce"},
+    {name:'Reduced-fat shredded cheddar', need:'200 g', qty:1, unit:'8oz bag', price:3, q:'reduced fat shredded cheddar'},
+    {name:'Red bell pepper', need:'1', qty:1, unit:'each', price:1, q:'red bell pepper'},
+    {name:'Siete mild taco seasoning', need:'4 tbsp', qty:1, unit:'pack', price:3.5, q:'Siete taco seasoning mild'},
+    {name:'Beef bone broth', need:'½ cup', qty:1, unit:'carton', price:4, q:'beef bone broth'},
+    {name:'Hot sauce / taco sauce', need:'½ cup', qty:1, unit:'bottle', price:3, q:'taco sauce'},
+    {name:'Kraft Mac & Cheese (for powder)', need:'1 packet', qty:1, unit:'box', price:1.5, q:'Kraft mac and cheese'}
+  ],
+  steps:[
+    'Spray slow cooker with olive oil, add 4 lb ground beef (optional: brown first).',
+    'Add 4 tbsp taco seasoning, ½ cup bone broth, ½ cup hot/taco sauce. Stir. Cook HIGH 3–4 hr or LOW 6–7 hr.',
+    'Blend 900 g cottage cheese, 150 g cream cheese, 120 g Rico’s sauce, and 1 Kraft cheese packet until smooth.',
+    'With 30 min left, pour queso into cooker with 200 g shredded cheddar and 1 chopped red bell pepper. Stir.',
+    'Cook 18 oz Protein+ pasta per package, drain well.',
+    'Fold pasta into cooker until creamy. Portion into 10 servings.'
+  ]},
+ {id:'queso-chicken-rice', name:'Queso Chicken & Rice Bowls', source:'Set It Shred Vol 1, p.16',
+  cal:579,p:60,c:55,f:12, servings:10, prep:'20–30 min', cook:'6–7 hr',
+  ingredients:[
+    {name:'Skinless chicken breast', need:'4 lb', qty:4, unit:'lb', price:3.50, q:'boneless skinless chicken breast'},
+    {name:'Fat-free cottage cheese', need:'600 g', qty:1, unit:'24oz tub', price:3.5, q:'fat free cottage cheese'},
+    {name:'⅓-reduced-fat cream cheese', need:'120 g', qty:1, unit:'8oz block', price:3, q:'1/3 less fat cream cheese'},
+    {name:'Reduced-fat cheddar', need:'200 g', qty:1, unit:'8oz bag', price:3, q:'reduced fat shredded cheddar'},
+    {name:"Rico's cheese sauce", need:'120 g', qty:1, unit:'pouch', price:4, q:"Rico's cheddar cheese sauce"},
+    {name:'Kraft mac & cheese (for powder)', need:'72 g', qty:1, unit:'box', price:1.5, q:'Kraft mac and cheese'},
+    {name:'Mild taco seasoning', need:'1 oz', qty:1, unit:'pack', price:1, q:'taco seasoning mild'},
+    {name:'Chipotle peppers in adobo', need:'½ cup', qty:1, unit:'can', price:2, q:'chipotle peppers in adobo'},
+    {name:'Chicken broth', need:'½ cup', qty:1, unit:'carton', price:3, q:'chicken broth'},
+    {name:'Minute white rice (dry)', need:'520 g', qty:1, unit:'box', price:4, q:'Minute white rice'},
+    {name:'Fresh cilantro', need:'1 cup', qty:1, unit:'bunch', price:1, q:'fresh cilantro'},
+    {name:'Lime', need:'1', qty:1, unit:'each', price:.5, q:'lime'}
+  ],
+  steps:[
+    'Place 4 lb chicken in slow cooker, sprinkle 1 oz taco seasoning, pour ½ cup broth.',
+    'Cook LOW 6–7 hr or HIGH 3–4 hr until shreddable.',
+    'Blend 600 g cottage cheese, 120 g cream cheese, 120 g cheese sauce, 72 g mac powder, ½ cup chipotle until smooth.',
+    'Shred chicken in cooker, add queso, cook LOW 30 min.',
+    'Stir in 200 g cheddar until melted.',
+    'Cook 520 g Minute rice, stir in cilantro + lime juice/zest. Divide rice + chicken into 10.'
+  ]},
+ {id:'chipotle-queso-steak', name:'Chipotle Queso Steak & Rice Bowls', source:'Set It Shred Vol 1, p.20',
+  cal:565,p:54,c:48,f:18, servings:10, prep:'20–30 min', cook:'6–7 hr',
+  ingredients:[
+    {name:'Flank steak', need:'4.25 lb', qty:4.25, unit:'lb', price:8.95, q:'flank steak'},
+    {name:'Fat-free cottage cheese', need:'650 g', qty:1, unit:'24oz tub', price:3.5, q:'fat free cottage cheese'},
+    {name:'⅓-less-fat cream cheese', need:'200 g', qty:1, unit:'8oz block', price:3, q:'1/3 less fat cream cheese'},
+    {name:'Kraft mac & cheese (for powder)', need:'1 packet', qty:1, unit:'box', price:1.5, q:'Kraft mac and cheese'},
+    {name:'Chipotle peppers in adobo', need:'¾ cup', qty:1, unit:'can', price:2, q:'chipotle peppers in adobo'},
+    {name:'ROTEL tomatoes & chiles', need:'½ cup', qty:1, unit:'can', price:1.5, q:'Rotel tomatoes and chiles'},
+    {name:'Beef bone broth', need:'½ cup+', qty:1, unit:'carton', price:4, q:'beef bone broth'},
+    {name:'Instant white rice (dry)', need:'450 g', qty:1, unit:'box', price:4, q:'Minute white rice'},
+    {name:'Reduced-fat shredded cheddar', need:'to top', qty:1, unit:'8oz bag', price:3, q:'reduced fat shredded cheddar'},
+    {name:'Spices (garlic, onion, cumin, chili)', need:'see steps', qty:1, unit:'pantry', price:2, q:'cumin chili powder garlic onion powder'}
+  ],
+  steps:[
+    'Add 4.25 lb steak, garlic/onion powder, S&P, cumin, chili powder, ½ cup chipotle, ½ cup ROTEL, ½ cup broth. Stir.',
+    'Cook HIGH 4 hr or LOW 7 hr until shreddable.',
+    'Blend 650 g cottage cheese, 200 g cream cheese, Kraft powder, ¼ cup chipotle, 2–3 tbsp broth until smooth.',
+    'Cook 450 g rice per package.',
+    'With 20 min left, shred steak, stir in rice, pour in queso.',
+    'Top with cheddar, LOW 20 min until creamy. Portion into 10.'
+  ]},
+ {id:'queso-steak-mac', name:'Queso Steak Macaroni & Cheese', source:'Set It Shred Vol 1, p.21',
+  cal:548,p:52,c:44,f:19, servings:8, prep:'20–30 min', cook:'6–7 hr',
+  ingredients:[
+    {name:'Flank steak', need:'2.25 lb', qty:2.25, unit:'lb', price:8.95, q:'flank steak'},
+    {name:'Banza shells', need:'16 oz', qty:2, unit:'box', price:3, q:'Banza chickpea shells pasta'},
+    {name:'Fat-free cottage cheese', need:'600 g', qty:1, unit:'24oz tub', price:3.5, q:'fat free cottage cheese'},
+    {name:"Rico's Premium Cheddar Sauce", need:'100 g', qty:1, unit:'pouch', price:4, q:"Rico's cheddar cheese sauce"},
+    {name:'⅓-reduced-fat cream cheese', need:'100 g', qty:1, unit:'8oz block', price:3, q:'1/3 less fat cream cheese'},
+    {name:'Reduced-fat shredded cheddar', need:'120 g', qty:1, unit:'8oz bag', price:3, q:'reduced fat shredded cheddar'},
+    {name:'Chipotle peppers in adobo', need:'40 g', qty:1, unit:'can', price:2, q:'chipotle peppers in adobo'},
+    {name:'Beef bone broth', need:'½ cup', qty:1, unit:'carton', price:4, q:'beef bone broth'},
+    {name:'Spices (ancho, garlic, onion, chili)', need:'see steps', qty:1, unit:'pantry', price:2, q:'ancho chili powder garlic onion powder'}
+  ],
+  steps:[
+    'Season 2.25 lb steak with S&P, garlic, onion, chili, ancho. Add 40 g chipotle + ½ cup broth.',
+    'Cook HIGH 3.5–4 hr or LOW 7–8 hr.',
+    'Shred steak in cooker, mix into broth.',
+    'Blend 600 g cottage cheese, 100 g Rico’s sauce, 100 g cream cheese. Pour over steak, LOW 10–15 min.',
+    'Cook 16 oz Banza shells, drain.',
+    'Stir in pasta + 120 g cheddar until creamy. Divide into 8.'
+  ]},
+ {id:'queso-beef-rice', name:'Queso Beef and Rice Bowls', source:'Tasty Shreds Yummies, p.26',
+  cal:540,p:62,c:36,f:16, servings:5, prep:'—', cook:'30 min',
+  ingredients:[
+    {name:'96/4 lean ground beef', need:'32 oz', qty:2, unit:'lb', price:6.25, q:'ground beef 96/4 lean'},
+    {name:'Right Rice — Spanish style', need:'5 servings', qty:2, unit:'box', price:3, q:'Right Rice Spanish'},
+    {name:'Reduced-fat cheddar', need:'100 g', qty:1, unit:'8oz bag', price:3, q:'reduced fat shredded cheddar'},
+    {name:'Fat-free cottage cheese', need:'300 g', qty:1, unit:'16oz tub', price:3, q:'fat free cottage cheese'},
+    {name:'Kraft mac & cheese (for powder)', need:'½ packet', qty:1, unit:'box', price:1.5, q:'Kraft mac and cheese'},
+    {name:'Taco seasoning', need:'to taste', qty:1, unit:'pack', price:1, q:'taco seasoning'},
+    {name:'Tomato', need:'1 large', qty:1, unit:'each', price:1, q:'tomato'},
+    {name:'Onion', need:'1 medium', qty:1, unit:'each', price:.75, q:'yellow onion'},
+    {name:'Cilantro + lime', need:'garnish', qty:1, unit:'each', price:1.5, q:'cilantro lime'}
+  ],
+  steps:[
+    'Cook 5 servings Right Rice.',
+    'Brown 32 oz beef, drain, season with taco seasoning, stir in 60 g cheddar.',
+    'Blend 300 g cottage cheese, ½ Kraft packet, taco seasoning, 40 g cheddar until smooth.',
+    'Dice tomato + onion, chop cilantro, slice lime.',
+    'Layer rice, beef, queso in 5 containers; top with veggies + lime.'
+  ]},
+ {id:'queso-beefy-burritos', name:'Queso Beefy Rice Burritos', source:'Set It Shred Vol 1, p.22',
+  cal:410,p:34,c:36,f:14, servings:18, prep:'20–30 min', cook:'6–7 hr',
+  ingredients:[
+    {name:'96/4 lean ground beef', need:'4 lb', qty:4, unit:'lb', price:6.25, q:'ground beef 96/4 lean'},
+    {name:'Instant white rice (dry)', need:'300 g', qty:1, unit:'box', price:4, q:'Minute white rice'},
+    {name:'High-fiber flour tortillas', need:'18', qty:2, unit:'pack', price:3, q:'high fiber flour tortillas'},
+    {name:'ROTEL tomatoes & chiles', need:'1 cup', qty:1, unit:'can', price:1.5, q:'Rotel tomatoes and chiles'},
+    {name:'Beef bone broth', need:'½ cup', qty:1, unit:'carton', price:4, q:'beef bone broth'},
+    {name:'Fat-free cottage cheese', need:'650 g', qty:1, unit:'24oz tub', price:3.5, q:'fat free cottage cheese'},
+    {name:"Rico's cheese sauce", need:'100 g', qty:1, unit:'pouch', price:4, q:"Rico's cheddar cheese sauce"},
+    {name:'⅓-reduced-fat cream cheese', need:'120 g', qty:1, unit:'8oz block', price:3, q:'1/3 less fat cream cheese'},
+    {name:'Reduced-fat shredded cheddar', need:'250 g', qty:2, unit:'8oz bag', price:3, q:'reduced fat shredded cheddar'},
+    {name:'Taco seasoning + ancho', need:'4 tbsp', qty:1, unit:'pack', price:1.5, q:'taco seasoning ancho chili powder'}
+  ],
+  steps:[
+    'Add 4 lb beef, 1 cup ROTEL, ½ cup broth. Cook LOW 3 hr, breaking up halfway.',
+    'Cook 300 g rice.',
+    'Blend 650 g cottage cheese, 100 g Rico’s, 120 g cream cheese, 4 tbsp taco seasoning, ancho until smooth.',
+    'Stir rice into beef, pour in queso.',
+    'Add 250 g cheddar, LOW 10–15 min.',
+    'Fill 18 tortillas, roll, store/freeze.'
+  ]},
+ // title-only rotation picks (open PDF for steps)
+ {id:'t1', name:'Birria Queso Protein Bowl', source:'Set It Shred Vol 1, p.5', cal:557,p:58,c:46,f:14, servings:10, titleOnly:true},
+ {id:'t2', name:'Buffalo Chicken Mac N Cheese', source:'Set It Shred Vol 1', cal:602,p:67,c:0,f:0, servings:10, titleOnly:true},
+ {id:'t3', name:'Chicken Bacon Ranch Pasta', source:'Set It Shred Vol 1', cal:601,p:70,c:0,f:0, servings:10, titleOnly:true},
+ {id:'t4', name:'Creamy Chicken Tortellini', source:'Set It Shred Vol 1', cal:525,p:60,c:0,f:0, servings:10, titleOnly:true},
+ {id:'t5', name:'Chicken Parmesan Alfredo', source:'Set It Shred Vol 1', cal:540,p:65,c:0,f:0, servings:10, titleOnly:true},
+ {id:'t6', name:'Mongolian Beef & Rice', source:'Set It Shred Vol 1', cal:552,p:51,c:0,f:0, servings:10, titleOnly:true}
+];
+
+/* ---------- STATE ---------- */
+const S = JSON.parse(localStorage.getItem('mealprep_amanda')||'{}');
+S.currentId = S.currentId || 'queso-taco-mac';
+S.items = S.items || {};      // {recipeId: {ingredientIndex: {q:qty, p:priceEach}}}
+S.flow = S.flow || {};
+S.assume = S.assume || {eat:13, cook:25};
+S.history = S.history || [];
+
+/* ---------- CLOUD SYNC (Firebase RTDB, shared duet-crm DB) ---------- */
+const SYNC_URL='https://duet-crm-default-rtdb.firebaseio.com/duetmealprep/amanda.json';
+let pushTimer=null, pulling=false;
+function applyRemote(d){
+  if(!d || typeof d!=='object') return false;
+  Object.keys(S).forEach(k=>delete S[k]);
+  Object.assign(S,d);
+  S.currentId = S.currentId || 'queso-taco-mac';
+  S.items = S.items || {}; S.flow = S.flow || {};
+  S.assume = S.assume || {eat:13, cook:25}; S.history = S.history || [];
+  return true;
+}
+async function pull(){
+  if(pulling) return; pulling=true;
+  try{
+    const r=await fetch(SYNC_URL,{cache:'no-store'});
+    const d=await r.json();
+    if(d && (d.updatedAt||0) > (S.updatedAt||0)){
+      applyRemote(d); localStorage.setItem('mealprep_amanda', JSON.stringify(S)); renderAll();
+    }
+  }catch(e){}
+  pulling=false;
+}
+async function push(){ try{ await fetch(SYNC_URL,{method:'PUT',body:JSON.stringify(S)}); }catch(e){} }
+
+function save(){
+  S.updatedAt = Date.now();
+  localStorage.setItem('mealprep_amanda', JSON.stringify(S));
+  clearTimeout(pushTimer); pushTimer=setTimeout(push, 600);
+}
+
+function rec(){ return RECIPES.find(r=>r.id===S.currentId)||RECIPES[0]; }
+function nextSunday(){ const d=new Date(); d.setDate(d.getDate()+((7-d.getDay())%7||7)); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+
+/* per-item helpers: stored override OR default */
+function itemRec(r,i){ S.items[r.id]=S.items[r.id]||{}; S.items[r.id][i]=S.items[r.id][i]||{}; return S.items[r.id][i]; }
+function itemQty(r,i){ const o=S.items[r.id]&&S.items[r.id][i]; return (o&&o.q!=null)?o.q:r.ingredients[i].qty; }
+function itemPrice(r,i){ const o=S.items[r.id]&&S.items[r.id][i]; return (o&&o.p!=null)?o.p:r.ingredients[i].price; }
+function itemHave(r,i){ const o=S.items[r.id]&&S.items[r.id][i]; return !!(o&&o.have); }
+function itemInCart(r,i){ const o=S.items[r.id]&&S.items[r.id][i]; return !!(o&&o.cart); }
+function setItem(r,i,field,val){ itemRec(r,i)[field]=val; save(); }
+function num(v){ const n=parseFloat(String(v).replace(/[^0-9.]/g,'')); return isNaN(n)?0:n; }
+
+/* ---------- RENDER: WEEK ---------- */
+function renderWeek(){
+  const r=rec();
+  document.getElementById('weekDate').textContent = nextSunday();
+  document.getElementById('recName').textContent = r.name;
+  document.getElementById('recMacros').innerHTML =
+    [['cal',r.cal],['P',r.p+'g'],['C',r.c?r.c+'g':'—'],['F',r.f?r.f+'g':'—']]
+    .map(m=>`<div class="macro"><b>${m[1]}</b><span>${m[0]}</span></div>`).join('');
+  document.getElementById('recServings').textContent = r.servings+' servings';
+  document.getElementById('recPrep').textContent = 'Prep '+(r.prep||'—');
+  document.getElementById('recCook').textContent = 'Cook '+(r.cook||'—');
+  document.getElementById('recSteps').innerHTML = r.titleOnly
+    ? '<li class="muted">Open '+r.source+' for full steps. Shopping totals still track cost &amp; time.</li>'
+    : r.steps.map(s=>`<li>${s}</li>`).join('');
+  document.querySelectorAll('#flow input').forEach(cb=>{
+    cb.checked = !!S.flow[cb.dataset.k];
+    cb.onchange = ()=>{ S.flow[cb.dataset.k]=cb.checked; save(); };
+  });
+}
+
+/* ---------- RENDER: SHOP ---------- */
+function renderShop(){
+  const r=rec(), wrap=document.getElementById('shopList');
+  if(r.titleOnly){ wrap.innerHTML='<div class="muted" style="padding:14px 0">No ingredient list stored for this pick — open '+r.source+'. Pick a full recipe from the Recipes tab for a Walmart list.</div>'; document.getElementById('shopTotal').textContent='—'; document.getElementById('cps').textContent='—'; document.getElementById('orderSummary').textContent=''; document.getElementById('verifyList').innerHTML=''; document.getElementById('vsummary').textContent=''; document.getElementById('vfill').style.width='0'; return; }
+  wrap.innerHTML = r.ingredients.map((ing,i)=>{
+    const q=itemQty(r,i), p=itemPrice(r,i), line=q*p, have=itemHave(r,i);
+    const url='https://www.walmart.com/search?q='+encodeURIComponent(ing.q);
+    return `<div class="srow${have?' owned':''}" data-row="${i}">
+      <div class="have"><input type="checkbox" data-have="${i}" ${have?'checked':''} title="I already have this"></div>
+      <div class="name"><b>${ing.name}</b><small>needs ${ing.need}</small></div>
+      <div class="qtywrap"><input type="text" inputmode="decimal" value="${q}" data-q="${i}"><span class="u">${ing.unit}</span></div>
+      <div class="pricewrap">$<input type="text" inputmode="decimal" value="${p}" data-p="${i}"></div>
+      <div class="linetot" data-line="${i}">$${line.toFixed(2)}</div>
+      <a class="wm" href="${url}" target="_blank" rel="noopener">Walmart ↗</a>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('input[data-q]').forEach(inp=>{
+    inp.onchange=()=>{ setItem(r,inp.dataset.q,'q',num(inp.value)); inp.value=num(inp.value); refreshTotals(); };
+  });
+  wrap.querySelectorAll('input[data-p]').forEach(inp=>{
+    inp.onchange=()=>{ setItem(r,inp.dataset.p,'p',num(inp.value)); inp.value=num(inp.value); refreshTotals(); };
+  });
+  wrap.querySelectorAll('input[data-have]').forEach(inp=>{
+    inp.onchange=()=>{ const i=inp.dataset.have; setItem(r,i,'have',inp.checked); if(inp.checked) setItem(r,i,'cart',false); document.querySelector(`[data-row="${i}"]`).classList.toggle('owned',inp.checked); refreshTotals(); renderVerify(); };
+  });
+  refreshTotals(); renderVerify();
+}
+function refreshTotals(){
+  const r=rec();
+  r.ingredients.forEach((ing,i)=>{
+    const el=document.querySelector(`[data-line="${i}"]`);
+    if(el) el.textContent= itemHave(r,i)?'—':'$'+(itemQty(r,i)*itemPrice(r,i)).toFixed(2);
+  });
+  const total=shopTotal();
+  const toOrder=r.ingredients.filter((ing,i)=>!itemHave(r,i)).length;
+  const haveN=r.ingredients.length-toOrder;
+  document.getElementById('shopTotal').textContent='$'+total.toFixed(2);
+  document.getElementById('cps').textContent='$'+(total/r.servings).toFixed(2);
+  document.getElementById('orderSummary').textContent=`${toOrder} item${toOrder!==1?'s':''} to order · ${haveN} already have`;
+}
+function shopTotal(){ const r=rec(); if(r.titleOnly) return 0; return r.ingredients.reduce((s,ing,i)=> itemHave(r,i)?s:s+itemQty(r,i)*itemPrice(r,i),0); }
+
+/* verify panel — checklist of items still to order */
+function renderVerify(){
+  const r=rec(); if(r.titleOnly) return;
+  const need = r.ingredients.map((ing,i)=>({ing,i})).filter(x=>!itemHave(r,x.i));
+  const list=document.getElementById('verifyList');
+  list.innerHTML = need.map(x=>{
+    const inc=itemInCart(r,x.i);
+    return `<div class="vrow${inc?' checked':''}">
+      <input type="checkbox" data-cart="${x.i}" ${inc?'checked':''}>
+      <span>${x.ing.name}</span>
+      <span class="vq">${itemQty(r,x.i)} ${x.ing.unit}</span>
+    </div>`;
+  }).join('') || '<div class="muted">Nothing to order — you have it all!</div>';
+  list.querySelectorAll('input[data-cart]').forEach(inp=>{
+    inp.onchange=()=>{ setItem(r,inp.dataset.cart,'cart',inp.checked); renderVerify(); };
+  });
+  const done=need.filter(x=>itemInCart(r,x.i)).length;
+  document.getElementById('vfill').style.width = need.length? (done/need.length*100)+'%' : '0';
+  document.getElementById('vsummary').textContent = need.length? `${done} of ${need.length} confirmed in cart`:'';
+}
+
+document.getElementById('resetPrices').onclick=()=>{
+  const r=rec(); if(S.items[r.id]){ delete S.items[r.id]; save(); } renderShop();
+};
+
+/* ---------- RENDER: LOG ---------- */
+function renderLog(){
+  document.getElementById('aEat').value = S.assume.eat;
+  document.getElementById('aCook').value = S.assume.cook;
+  if(!document.getElementById('logDate').value) document.getElementById('logDate').valueAsDate = new Date();
+  let weeks=S.history.length, meals=0, saved=0, time=0, cost=0;
+  S.history.forEach(h=>{ meals+=h.serv; saved+=(h.eat*h.serv - h.cost); time+=(h.cook*h.serv - h.time); cost+=h.cost; });
+  document.getElementById('tWeeks').textContent=weeks;
+  document.getElementById('tMeals').textContent=meals;
+  document.getElementById('tSaved').textContent='$'+Math.round(saved);
+  document.getElementById('tTime').textContent=(time/60).toFixed(1)+'h';
+  document.getElementById('tPerServ').textContent = meals? 'Avg cost/serving: $'+(cost/meals).toFixed(2)+' · vs ~$'+S.assume.eat+' eating out':'';
+  document.getElementById('history').innerHTML = weeks? S.history.slice().reverse().map(h=>
+    `<div class="logrow"><span>${h.date} · ${h.name}</span><span>$${h.cost.toFixed(2)} · ${h.serv} meals · ${h.time}m</span></div>`
+  ).join('') : '<div class="muted">No weeks logged yet.</div>';
+}
+document.getElementById('saveLog').onclick = ()=>{
+  const r=rec();
+  S.assume.eat = parseFloat(document.getElementById('aEat').value)||13;
+  S.assume.cook = parseFloat(document.getElementById('aCook').value)||25;
+  const costInput = document.getElementById('logCost').value;
+  S.history.push({
+    date: document.getElementById('logDate').value || nextSunday(),
+    name: r.name,
+    serv: parseInt(document.getElementById('logServ').value)||r.servings,
+    cost: costInput!==''? parseFloat(costInput) : shopTotal(),
+    time: parseInt(document.getElementById('logTime').value)||40,
+    eat: S.assume.eat, cook: S.assume.cook
+  });
+  document.getElementById('logCost').value='';
+  save(); renderLog();
+  alert('Saved! '+r.name+' logged.');
+};
+
+/* ---------- RENDER: LIBRARY ---------- */
+function renderLib(){
+  document.getElementById('recLib').innerHTML = RECIPES.map(r=>
+    `<div class="rec" data-pick="${r.id}">
+      <div><b>${r.name} ${r.titleOnly?'★':''}</b><small>${r.cal} cal · ${r.p}g protein · ${r.servings} servings · ${r.source}</small></div>
+      <span class="muted">›</span>
+    </div>`).join('');
+  document.querySelectorAll('[data-pick]').forEach(el=>{
+    el.onclick=()=>{ S.currentId=el.dataset.pick; S.flow={}; save(); renderAll(); document.querySelector('nav button[data-tab=week]').click(); };
+  });
+}
+
+/* rotate = next full recipe in list */
+document.getElementById('rotateBtn').onclick=()=>{
+  const full = RECIPES.filter(r=>!r.titleOnly);
+  const idx = full.findIndex(r=>r.id===S.currentId);
+  S.currentId = full[(idx+1)%full.length].id; S.flow={}; save(); renderAll();
+};
+
+/* ---------- NAV ---------- */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById(b.dataset.tab).classList.add('active');
+  };
+});
+
+function renderAll(){ renderWeek(); renderShop(); renderLog(); renderLib(); }
+renderAll();
+
+/* pull cloud state on open, on return to app, and every 20s */
+pull();
+setInterval(pull, 20000);
+window.addEventListener('focus', pull);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) pull(); });
+</script>
+</body>
+</html>
